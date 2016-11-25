@@ -7,3 +7,13 @@ New Update in this version:-
 5. Response Simplified.
 
 AWS Updated on - 21st nov 2016 at 3:45 p.m
+
+Update on - 25th Nov 2016
+
+1. Now image is not getting stored on disk, only vector of image is used in both module add and search.
+2. Response time reduced in search and add image.
+3. DataBase changed a bit.
+4. Face detection used while seaeching for quick response.
+
+AWS Updated - NO.
+

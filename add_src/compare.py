@@ -1,11 +1,8 @@
-
 import cv2
 import itertools
 import os
-
 import numpy as np
 np.set_printoptions(precision=2)
-
 import openface
 
 
@@ -13,12 +10,14 @@ align = openface.AlignDlib('../model/shape_predictor_68_face_landmarks.dat')
 net = openface.TorchNeuralNet('../model/nn4.small2.v1.t7')
 
 
+def face_dlib(img):
+	rgbImg = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+	bb = align.getLargestFaceBoundingBox(rgbImg)
+	return bb
 
-def getRep(imgPath):
+def getSearchRep(img):
 
-	bgrImg = cv2.imread(imgPath)
-
-	rgbImg = cv2.cvtColor(bgrImg, cv2.COLOR_BGR2RGB)
+	rgbImg = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
 	bb = align.getLargestFaceBoundingBox(rgbImg)
 

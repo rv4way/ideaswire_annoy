@@ -11,28 +11,21 @@ import compare
 import cPickle
 import update_annoy as ann
 
-def transform_image(img_path, profile_id):
+def transform_image(img, profile_id):
 
-	profile_path = os.path.join('../data/add_image', str(profile_id))
-	if not os.path.exists(profile_path):
-		os.mkdir(profile_path)
-	
-	img = cv2.imread(img_path)
-	'''saving image as it is'''
-	
-	cv2.imwrite(profile_path+'/'+str(profile_id)+'.jpg', img)
-
+	img_rep = compare.getSearchRep(img)
+	store_rep(img_rep, profile_id)
 	con_img = convolve_image(img)
-	#print con_img
-	#cv2.imshow('tete', con_img)
-	#cv2.waitKey()
+	img_rep = compare.getSearchRep(con_img)
+	store_rep(img_rep, profile_id)
+	affine_transform(img, profile_id)
 
-	cv2.imwrite(profile_path + '/' + str(profile_id) + '_' + str('con_img') + '.jpg', con_img)
+	ann.create_annoy()
+	update_status(profile_id)
+	#print "DONE"
+	return "DONE"
 
-	return profile_path
-
-def affine_transform(img, profile_path, name):
-	#print profile_path, name
+def affine_transform(img, profile_id):
 	rows,cols,ch = img.shape
 
 	x_rot = 50
@@ -43,37 +36,27 @@ def affine_transform(img, profile_path, name):
 		x_rot = x_rot + 10
 		y_rot = y_rot + 10
 
-		pts2 = np.float32([[x_rot, x_rot],[200,50],[x_rot,y_rot]])
-	
+		pts2 = np.float32([[x_rot, x_rot],[200,50],[x_rot,y_rot]])	
 		M = cv2.getAffineTransform(pts1,pts2)
-
 		dst = cv2.warpAffine(img,M,(cols,rows))
-	
-
-		#cv2.imshow('AFFINE', dst)
-		#cv2.waitKey()
-		cv2.imwrite(profile_path + '/' + name + '_+_' + str(x_rot) + '.jpg', dst)
+		
+		img_rep = compare.getSearchRep(dst)
+		store_rep(img_rep, profile_id)
 
 	x_rot = 50
 	y_rot = 200
 	for x in range(2):
 		pts1 = np.float32([[50,50],[200,50],[50,200]])
 
-		x_rot = x_rot - 20
-		y_rot = y_rot - 20
+		x_rot = x_rot - 10
+		y_rot = y_rot - 10
 
-		pts2 = np.float32([[x_rot, x_rot],[200,50],[x_rot,y_rot]])
-	
+		pts2 = np.float32([[x_rot, x_rot],[200,50],[x_rot,y_rot]])	
 		M = cv2.getAffineTransform(pts1,pts2)
-
 		dst = cv2.warpAffine(img,M,(cols,rows))
-	
 
-		#cv2.imshow(str(('AFFINE', x)), dst)
-		#cv2.waitKey()
-		cv2.imwrite(profile_path + '/' + name + '_-_' + str(x_rot) + '.jpg', dst)
-
-
+		img_rep = compare.getSearchRep(dst)
+		store_rep(img_rep, profile_id)
 
 def convolve_image(img):
 
@@ -84,37 +67,16 @@ def convolve_image(img):
 	new_img = cv2.filter2D(img,-1,kernel)
 	return new_img
 
-def cal_rep(profile_path, profile_id):
-	#print profile_id
-	image_list = os.listdir(profile_path)
-	for x, y in enumerate(image_list):
-		img_path = os.path.join(profile_path, y)
-		#print img_path
-		try:
-			#getting rep of the images 
-			img_rep = compare.getRep(img_path)
-			store_rep(img_rep, profile_id)
-		except:
-			print 'Error, ERROR CODE - 1001'
-			pass
-		
-	#print 'REP WRITTEN TO DISK'
-
 def store_rep(img_rep, profile_id):
 
 	rep_location = '../img_rep'
 	rep_file = os.path.join(rep_location, str(profile_id)) + '.pkl'
 	img_rep = list(img_rep)
-	
 
-	#writing rep to pkl file
 	if os.path.isfile(rep_file):
 		temp_list = []
-		#temp = open(rep_file, 'rb')
 		with open(rep_file, "rb") as temp:
-			#print temp
 			temp_rep = cPickle.load(temp)
-		#print len(temp_rep)
 		for x in range(len(temp_rep)):
 			temp_list.append(temp_rep[x])
 		
@@ -123,15 +85,11 @@ def store_rep(img_rep, profile_id):
 		f = open(rep_file, 'wb')
 		cPickle.dump(temp_list, f, protocol=cPickle.HIGHEST_PROTOCOL)
 		f.close()
-	
-	#creating new pkl file for new profile id
 	else:
 		f = open(rep_file, 'wb')
 		#print [img_rep]
 		cPickle.dump([img_rep], f, protocol=cPickle.HIGHEST_PROTOCOL)
 		f.close()
-	
-
 
 def update_status(profile_id):
 
@@ -147,24 +105,3 @@ def update_status(profile_id):
 		temp_status_file.write('\n')
 		temp_status_file.close()
 		#print '\t\tSTATUS UPDATED'
-	
-
-def main_fun(img_path, profile_id):
-	profile_path = transform_image(img_path, profile_id)
-	#print profile_path
-	
-	#function for rep calculation and storing
-	cal_rep(profile_path, profile_id)
-	
-	#function for annoy creation and updation
-	ann.create_annoy()
-	update_status(profile_id)
-	#print "DONE"
-	return "DONE"
-
-
-'''
-if __name__ == '__main__':
-	img_path = '../rahul_05.jpg'
-	main_fun(img_path, 'new_rahul')
-'''

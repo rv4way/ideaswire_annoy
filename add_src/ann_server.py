@@ -1,4 +1,3 @@
-print "\n\n\t\t\t*****STARTING SERVER. PLEASE WAIT*****\n\n"
 from flask import Flask,jsonify,Response,request, redirect, url_for
 import json
 from celery import Celery
@@ -14,8 +13,6 @@ import time
 import check_status
 import transform_img as tf
 import ann_search as ans
-
-
 
 app = Flask(__name__)
 app.config['DEBUG'] = True
@@ -33,11 +30,8 @@ def add_single_iamge():
 			data = np.fromstring(in_memory_file.getvalue(), dtype=np.uint8)
 			color_image_flag = 1
 			img = cv2.imdecode(data, color_image_flag)
-			temp_path = '../data/add_image/' + str(header_req)+ '.jpg'
-			cv2.imwrite(temp_path, img)
 			print header_req
-			#print temp_path
-			add_response = tf.main_fun(temp_path, header_req)
+			add_response = tf.transform_image(img, header_req)
 			print add_response
 			ret_val={'message':'image queued for adding.','status':2,'data':header_req }
 			return 	jsonify(**ret_val)
@@ -57,20 +51,20 @@ def search_image():
 			data = np.fromstring(in_memory_file.getvalue(), dtype=np.uint8)
 			color_image_flag = 1
 			img = cv2.imdecode(data, color_image_flag)
-			cur_time = time.ctime()
-			temp_path = '../data/search_image/' + str(cur_time)+ '.jpg'
-			cv2.imwrite(temp_path, img)
-			print temp_path
 
-			search_response = ans.search_img(temp_path)
+			search_response, stat = ans.search_img(img)
 
-			if len(search_response) != 0:
-				search_response = json.dumps(search_response)
-				ret_val={'message':'images found','status': 1,'data': search_response}
-				return 	jsonify(**ret_val)
-			else:
-				search_response = json.dumps(search_response)
-				ret_val={'message':'images not found','status':0,'data':search_response}
+			if stat == 1:
+				if len(search_response) != 0:
+					search_response = json.dumps(search_response)
+					ret_val={'message':'images found','status': 1,'data': search_response}
+					return 	jsonify(**ret_val)
+				else:
+					search_response = json.dumps(search_response)
+					ret_val={'message':'images not found','status':0,'data': search_response}
+					return 	jsonify(**ret_val)
+			elif stat == 0:
+				ret_val={'message':'face not found','status':2,'data':json.dumps([])}
 				return 	jsonify(**ret_val)
 
 	except:
@@ -103,5 +97,4 @@ def status_face():
 		return 	jsonify(**ret_val)
 
 if __name__ == '__main__':
-
 	app.run(debug = True, host = '0.0.0.0')
