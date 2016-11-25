@@ -8,7 +8,7 @@ New Update in this version:-
 
 AWS Updated on - 21st nov 2016 at 3:45 p.m
 
-Update on - 25th Nov 2016
+Update on - 25th Nov 2016 (Version - update 1.0.1)
 
 1. Now image is not getting stored on disk, only vector of image is used in both module add and search.
 2. Response time reduced in search and add image.
